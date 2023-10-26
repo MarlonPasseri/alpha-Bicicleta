@@ -1,0 +1,392 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.HashMap;
+import java.util.Map;
+
+public class BikeRentalSystem extends JFrame {
+    private Map<String, User> users = new HashMap<>();
+    private Map<Integer, Bike> bikes = new HashMap<>();
+    private Map<Integer, RentalRecord> rentals = new HashMap<>();
+    private User admin;
+    private String adminUsername;
+    private String adminPassword;
+    private JTabbedPane tabbedPane;
+
+    public BikeRentalSystem() {
+        adminUsername = "admin";
+        adminPassword = "admin123";
+        admin = new User(adminUsername, adminPassword);
+
+
+        bikes.put(1, new Bike(1, "Bike A"));
+        bikes.put(2, new Bike(2, "Bike B"));
+
+        setTitle("Sistema de Aluguel de Bicicletas");
+        setSize(800, 600);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+        createMenu();
+
+        tabbedPane = new JTabbedPane();
+        add(tabbedPane);
+
+
+    }
+
+    private void createMenu() {
+        JMenuBar menuBar = new JMenuBar();
+        setJMenuBar(menuBar);
+
+        JMenu fileMenu = new JMenu("File");
+        JMenu optionsMenu = new JMenu("Options");
+        JMenu adminMenu = new JMenu("Admin");
+
+        JMenuItem exitMenuItem = new JMenuItem("Exit");
+        exitMenuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.exit(0);
+            }
+        });
+        fileMenu.add(exitMenuItem);
+
+        JMenuItem loginAdminMenuItem = new JMenuItem("Login Admin");
+        JMenuItem loginUsuarioMenuItem = new JMenuItem("Login Usuário");
+        JMenuItem listarUsuariosMenuItem = new JMenuItem("Listar Usuários");
+        JMenuItem listarBicicletasMenuItem = new JMenuItem("Listar Bicicletas");
+
+        optionsMenu.add(loginAdminMenuItem);
+        optionsMenu.add(loginUsuarioMenuItem);
+        optionsMenu.add(listarUsuariosMenuItem);
+        optionsMenu.add(listarBicicletasMenuItem);
+
+        JMenuItem cadastrarUsuarioMenuItem = new JMenuItem("Cadastrar Usuário");
+        adminMenu.add(cadastrarUsuarioMenuItem);
+
+        menuBar.add(fileMenu);
+        menuBar.add(optionsMenu);
+        menuBar.add(adminMenu);
+
+        loginAdminMenuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                loginAdmin();
+            }
+        });
+
+        loginUsuarioMenuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                loginUsuario();
+            }
+        });
+
+        listarUsuariosMenuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                listarUsuarios();
+            }
+        });
+
+        listarBicicletasMenuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                listarBicicletas();
+            }
+        });
+
+        cadastrarUsuarioMenuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (isAdminLoggedIn()) {
+                    cadastrarUsuario();
+                } else {
+                    JOptionPane.showMessageDialog(BikeRentalSystem.this, "Apenas o admin pode cadastrar usuários. Faça o login como admin.");
+                }
+            }
+        });
+    }
+
+    private void loginAdmin() {
+        String inputUsername = JOptionPane.showInputDialog(this, "Digite o nome de usuário do Admin:");
+        String inputPassword = JOptionPane.showInputDialog(this, "Digite a senha do Admin:");
+
+        if (inputUsername != null && inputPassword != null && inputUsername.equals(adminUsername) && inputPassword.equals(adminPassword)) {
+            // Abre a aba de gerenciamento
+            tabbedPane.addTab("Gerenciamento", createAdminPanel());
+        } else {
+            JOptionPane.showMessageDialog(this, "Nome de usuário ou senha incorretos.");
+        }
+    }
+
+    private void loginUsuario() {
+        String inputUsername = JOptionPane.showInputDialog(this, "Digite o nome de usuário:");
+        String inputPassword = JOptionPane.showInputDialog(this, "Digite a senha:");
+
+        User user = users.get(inputUsername);
+        if (user != null && user.getPassword().equals(inputPassword)) {
+
+            tabbedPane.addTab("Usuário", createUserPanel(user));
+        } else {
+            JOptionPane.showMessageDialog(this, "Nome de usuário ou senha incorretos.");
+        }
+    }
+
+    private JPanel createUserPanel(User user) {
+        JPanel userPanel = new JPanel();
+        userPanel.setLayout(new FlowLayout());
+
+        JButton alugarBicicletaButton = new JButton("Alugar Bicicleta");
+        JButton devolverBicicletaButton = new JButton("Devolver Bicicleta");
+
+        userPanel.add(alugarBicicletaButton);
+        userPanel.add(devolverBicicletaButton);
+
+        alugarBicicletaButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                alugarBicicleta(user);
+            }
+        });
+
+        devolverBicicletaButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                devolverBicicleta(user);
+            }
+        });
+
+        return userPanel;
+    }
+
+    private JPanel createAdminPanel() {
+        JPanel adminPanel = new JPanel();
+        adminPanel.setLayout(new FlowLayout());
+
+        JButton changeUserInfoButton = new JButton("Mudar Informações do Usuário");
+        JButton addBikeButton = new JButton("Adicionar Bicicleta");
+        JButton changeBikeInfoButton = new JButton("Mudar Informações da Bicicleta");
+        JButton showRentalRecordsButton = new JButton("Mostrar Registros de Aluguel");
+
+        adminPanel.add(changeUserInfoButton);
+        adminPanel.add(addBikeButton);
+        adminPanel.add(changeBikeInfoButton);
+        adminPanel.add(showRentalRecordsButton);
+
+        changeUserInfoButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                changeUserInfo();
+            }
+        });
+
+        addBikeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                addBike();
+            }
+        });
+
+        changeBikeInfoButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                changeBikeInfo();
+            }
+        });
+
+        showRentalRecordsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showRentalRecords();
+            }
+        });
+
+        return adminPanel;
+    }
+
+    private void changeUserInfo() {
+        String username = JOptionPane.showInputDialog(this, "Digite o nome de usuário a ser modificado:");
+        if (username != null) {
+            User user = users.get(username);
+            if (user != null) {
+                String newUsername = JOptionPane.showInputDialog(this, "Digite o novo nome de usuário:");
+                if (newUsername != null) {
+                    user.setUsername(newUsername);
+                    JOptionPane.showMessageDialog(this, "Nome de usuário modificado com sucesso.");
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Usuário não encontrado.");
+            }
+        }
+    }
+
+    private void cadastrarUsuario() {
+        String username = JOptionPane.showInputDialog(this, "Digite o nome de usuário:");
+        if (username != null) {
+            String password = JOptionPane.showInputDialog(this, "Digite a senha do usuário:");
+            if (password != null) {
+                createUser(username, password);
+                JOptionPane.showMessageDialog(this, "Usuário cadastrado com sucesso.");
+            }
+        }
+    }
+
+    private void addBike() {
+        int bikeId = bikes.size() + 1;
+        String bikeName = JOptionPane.showInputDialog(this, "Digite o nome da nova bicicleta:");
+        if (bikeName != null) {
+            bikes.put(bikeId, new Bike(bikeId, bikeName));
+            JOptionPane.showMessageDialog(this, "Bicicleta adicionada com sucesso.");
+        }
+    }
+
+    private void changeBikeInfo() {
+        int bikeId = Integer.parseInt(JOptionPane.showInputDialog(this, "Digite o ID da bicicleta a ser modificada:"));
+        if (bikes.containsKey(bikeId)) {
+            String newBikeName = JOptionPane.showInputDialog(this, "Digite o novo nome da bicicleta:");
+            if (newBikeName != null) {
+                bikes.get(bikeId).setName(newBikeName);
+                JOptionPane.showMessageDialog(this, "Informações da bicicleta modificadas com sucesso.");
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Bicicleta não encontrada. Verifique o ID da bicicleta.");
+        }
+    }
+
+    private void showRentalRecords() {
+        StringBuilder rentalRecords = new StringBuilder("Registros de Aluguel:\n");
+        for (RentalRecord record : rentals.values()) {
+            rentalRecords.append("Bicicleta ID: ").append(record.getBikeId())
+                    .append(", Hora de Aluguel: ").append(record.getRentalTime()).append("\n");
+        }
+        JOptionPane.showMessageDialog(this, rentalRecords.toString());
+    }
+
+    private void alugarBicicleta(User user) {
+        int bikeId = Integer.parseInt(JOptionPane.showInputDialog(this, "Digite o ID da bicicleta que deseja alugar:"));
+        if (bikes.containsKey(bikeId)) {
+            rentals.put(bikeId, new RentalRecord(bikeId, System.currentTimeMillis()));
+            JOptionPane.showMessageDialog(this, "Bicicleta ID " + bikeId + " alugada com sucesso.");
+        } else {
+            JOptionPane.showMessageDialog(this, "Bicicleta não encontrada. Verifique o ID da bicicleta.");
+        }
+    }
+
+    private void devolverBicicleta(User user) {
+        int bikeId = Integer.parseInt(JOptionPane.showInputDialog(this, "Digite o ID da bicicleta que deseja devolver:"));
+        if (bikes.containsKey(bikeId)) {
+            RentalRecord record = rentals.get(bikeId);
+            if (record != null) {
+                long rentalTime = System.currentTimeMillis() - record.getRentalTime();
+                JOptionPane.showMessageDialog(this, "Bicicleta ID " + bikeId + " devolvida com sucesso.\nTempo de Aluguel: " + (rentalTime / 1000) + " segundos");
+                rentals.remove(bikeId);
+            } else {
+                JOptionPane.showMessageDialog(this, "Essa bicicleta não está alugada.");
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Bicicleta não encontrada. Verifique o ID da bicicleta.");
+        }
+    }
+
+    private void listarUsuarios() {
+
+        StringBuilder userList = new StringBuilder("Lista de Usuários:\n");
+        for (User user : users.values()) {
+            userList.append(user.getUsername()).append("\n");
+        }
+        JOptionPane.showMessageDialog(this, userList.toString());
+    }
+
+    private void listarBicicletas() {
+        // Lógica para listar bicicletas
+        // Exemplo de listagem de bicicletas
+        StringBuilder bikeList = new StringBuilder("Lista de Bicicletas:\n");
+        for (Bike bike : bikes.values()) {
+            bikeList.append("ID: ").append(bike.getId()).append(", Nome: ").append(bike.getName()).append("\n");
+        }
+        JOptionPane.showMessageDialog(this, bikeList.toString());
+    }
+
+    private void createUser(String username, String password) {
+        users.put(username, new User(username, password));
+    }
+
+    private boolean isAdminLoggedIn() {
+        // Verifica se o admin está logado
+        // Você pode adicionar lógica adicional aqui, se necessário
+        return tabbedPane.indexOfTab("Gerenciamento") != -1;
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                BikeRentalSystem system = new BikeRentalSystem();
+                system.setVisible(true);
+            }
+        });
+    }
+
+    class User {
+        private String username;
+        private String password;
+
+        public User(String username, String password) {
+            this.username = username;
+            this.password = password;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+    }
+
+    class Bike {
+        private int id;
+        private String name;
+
+        public Bike(int id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+    }
+
+    class RentalRecord {
+        private int bikeId;
+        private long rentalTime;
+
+        public RentalRecord(int bikeId, long rentalTime) {
+            this.bikeId = bikeId;
+            this.rentalTime = rentalTime;
+        }
+
+        public int getBikeId() {
+            return bikeId;
+        }
+
+        public long getRentalTime() {
+            return rentalTime;
+        }
+    }
+}
